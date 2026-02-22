@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송쌤과학 주기율표 마스터하기</title>
+    <style>
+        :root {
+            --bg-1: #FF9AA2;   /* 1-9번 */
+            --bg-10: #FFB7B2;  /* 10-19번 */
+            --bg-20: #B5EAD7;  /* 20-29번 */
+            --bg-30: #C7CEEA;  /* 30번대 이상 */
+            --dark: #2D3436;
+            --light: #FDFDFD;
+            --primary: #6C5CE7;
+            --correct: #00B894;
+            --wrong: #D63031;
+            --warning: #FD79A8;
+            --bg-dark: #2D3436;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-dark);
+            transition: background-color 0.8s ease;
+            color: var(--dark);
+        }
+
+        /* 메인 컨테이너 */
+        .app-container {
+            background: rgba(255, 255, 255, 0.95);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 { 
+            margin-top: 0; 
+            color: var(--primary); 
+            font-size: 1.8rem; 
+            word-break: keep-all; 
+        }
+        h2 { font-size: 1.5rem; margin: 10px 0; }
+        p { color: #636e72; }
+
+        .input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: 2px solid #dfe6e9;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            border-color: var(--primary);
+        }
+
+        /* 버튼 스타일 */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin: 5px;
+            width: 100%;
+            max-width: 300px;
+            word-break: keep-all;
+        }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:active { transform: translateY(0); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-check { background-color: var(--warning); }
+        .btn-next { background-color: var(--dark); }
+
+        .btn-home {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid #b2bec3;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 0.85rem;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-home:hover { background: white; transform: scale(1.05); }
+
+        .screen { display: none; animation: fadeIn 0.5s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .study-list {
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f1f2f6;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .study-item { font-size: 0.9rem; padding: 4px; border-bottom: 1px solid #dfe6e9; }
+        .study-item b { color: var(--primary); }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            background: #f1f2f6;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .timer-box { color: var(--wrong); }
+        .score-box { color: var(--primary); }
+
+        .question-card {
+            background: white;
+            border: 2px solid #dfe6e9;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .element-name {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 10px 0;
+        }
+        
+        .quiz-instruction { font-size: 0.9rem; color: #b2bec3; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #dfe6e9;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-btn:hover { background: #f1f2f6; border-color: var(--primary); }
+        
+        .option-btn.correct { background: var(--correct) !important; color: white !important; border-color: var(--correct) !important; }
+        .option-btn.wrong { background: var(--wrong) !important; color: white !important; border-color: var(--wrong) !important; animation: shake 0.4s; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .feedback-msg {
+            height: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .student-info-display {
+            background: #f1f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #bdc3c7;
+        }
+
+        /* 모달 스타일 추가 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none; /* JS로 제어 */
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .modal-msg { margin-bottom: 20px; font-size: 1.1rem; color: var(--dark); line-height: 1.5; }
+        .modal-btn-group { display: flex; gap: 10px; justify-content: center; }
+
+        @media (max-width: 400px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .element-name { font-size: 2rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. 시작 화면 -->
+        <div id="start-screen" class="screen active">
+            <h1>⚛️ 송쌤과학 주기율표 마스터하기</h1>
+            <p>중2 과학 필수 원소 기호 퀴즈</p>
+            
+            <div class="input-group">
+                <input type="text" id="input-id" class="input-field" placeholder="학번 (예: 20101)">
+                <input type="text" id="input-name" class="input-field" placeholder="이름">
+            </div>
+
+            <div style="margin: 20px 0;">
+                <p>⏱️ 제한시간: 3분</p>
+                <p style="font-size: 0.9rem; color: var(--primary);">
+                    🎯 점수 규칙:<br>
+                    1차 정답: +1점 / 2차 정답: +0.5점<br>
+                    <span style="color: var(--wrong);">❌ 오답 선택 시: -1점</span>
+                </p>
+            </div>
+            
+            <button class="btn btn-outline" onclick="toggleStudy()">📖 공부하기 (목록)</button>
+            <div id="study-panel" class="study-list" style="display: none;"></div>
+            
+            <br><br>
+            <button class="btn" onclick="startGame()">🚀 정보 입력 후 시작</button>
+        </div>
+
+        <!-- 2. 게임 화면 -->
+        <div id="game-screen" class="screen">
+            <!-- 처음으로 버튼 영역 -->
+            <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <button class="btn-home" onclick="goHome()">🏠 처음으로</button>
+            </div>
+
+            <div class="status-bar">
+                <span class="timer-box">⏳ <span id="timer">03:00</span></span>
+                <span class="score-box">🏆 <span id="score">0</span>점</span>
+            </div>
+
+            <div class="question-card">
+                <div class="quiz-instruction">다음 원소의 기호는?</div>
+                <div id="q-text" class="element-name">수소</div>
+            </div>
+
+            <div id="feedback" class="feedback-msg"></div>
+
+            <div id="options-container" class="options-grid"></div>
+
+            <div class="control-panel">
+                <button id="btn-check" class="btn btn-check" onclick="revealAnswer()">🔍 정답 확인 (0점)</button>
+                <button id="btn-next" class="btn btn-next" onclick="nextQuestion()" style="display:none;">다음 문제 ➡️</button>
+            </div>
+        </div>
+
+        <!-- 3. 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <h1>게임 종료! 🎉</h1>
+            <div style="font-size: 4rem; margin: 20px;">⚗️</div>
+            
+            <div id="result-student-info" class="student-info-display"></div>
+            
+            <h2>최종 점수: <span id="final-score" style="color: var(--primary);">0</span>점</h2>
+            <p id="result-message">수고하셨습니다!</p>
+            <button class="btn" onclick="saveResultImage()">📸 퀴즈 결과 이미지로 저장하기</button>
+            <button class="btn" onclick="location.reload()">🔄 다시 도전하기</button>
+        </div>
+
+        <div class="footer">ⓒ 2025. 송쌤과학 All rights reserved.</div>
+    </div>
+
+    <!-- 커스텀 모달 (Confirm/Alert 대체용) -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <p id="modal-text" class="modal-msg"></p>
+            <div id="modal-buttons" class="modal-btn-group"></div>
+        </div>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        const elements = [
+            { n: 1, s: "H", k: "수소" }, { n: 2, s: "He", k: "헬륨" },
+            { n: 3, s: "Li", k: "리튬" }, { n: 4, s: "Be", k: "베릴륨" },
+            { n: 5, s: "B", k: "붕소" }, { n: 6, s: "C", k: "탄소" },
+            { n: 7, s: "N", k: "질소" }, { n: 8, s: "O", k: "산소" },
+            { n: 9, s: "F", k: "플루오린" }, { n: 10, s: "Ne", k: "네온" },
+            { n: 11, s: "Na", k: "나트륨" }, { n: 12, s: "Mg", k: "마그네슘" },
+            { n: 13, s: "Al", k: "알루미늄" }, { n: 14, s: "Si", k: "규소" },
+            { n: 15, s: "P", k: "인" }, { n: 16, s: "S", k: "황" },
+            { n: 17, s: "Cl", k: "염소" }, { n: 18, s: "Ar", k: "아르곤" },
+            { n: 19, s: "K", k: "칼륨" }, { n: 20, s: "Ca", k: "칼슘" },
+            { n: 21, s: "Sc", k: "스칸듐" }, { n: 22, s: "Ti", k: "타이타늄" },
+            { n: 23, s: "V", k: "바나듐" }, { n: 24, s: "Cr", k: "크로뮴" },
+            { n: 25, s: "Mn", k: "망가니즈" }, { n: 26, s: "Fe", k: "철" },
+            { n: 27, s: "Co", k: "코발트" }, { n: 28, s: "Ni", k: "니켈" },
+            { n: 29, s: "Cu", k: "구리" }, { n: 30, s: "Zn", k: "아연" },
+            { n: 35, s: "Br", k: "브로민" }, { n: 47, s: "Ag", k: "은" },
+            { n: 53, s: "I", k: "아이오딘" }, { n: 56, s: "Ba", k: "바륨" },
+            { n: 78, s: "Pt", k: "백금" }, { n: 79, s: "Au", k: "금" },
+            { n: 80, s: "Hg", k: "수은" }, { n: 82, s: "Pb", k: "납" }
+        ];
+
+        let score = 0;
+        let timeLeft = 180;
+        let timerId = null;
+        let currentElement = null;
+        let attempts = 0;
+        let isQuestionActive = false;
+        let studentInfo = "";
+
+        const studyPanel = document.getElementById('study-panel');
+        elements.forEach(el => {
+            studyPanel.innerHTML += `<div class="study-item"><b>${el.n}.</b> ${el.k} (${el.s})</div>`;
+        });
+
+        function toggleStudy() {
+            studyPanel.style.display = studyPanel.style.display === 'none' ? 'grid' : 'none';
+        }
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function updateBackground(number) {
+            let colorVar;
+            if (number < 10) colorVar = 'var(--bg-1)';
+            else if (number < 20) colorVar = 'var(--bg-10)';
+            else if (number < 30) colorVar = 'var(--bg-20)';
+            else colorVar = 'var(--bg-30)';
+            
+            document.body.style.backgroundColor = colorVar;
+        }
+
+        // --- 모달 관련 함수 ---
+        function showModal(msg, type, yesCallback) {
+            const modal = document.getElementById('custom-modal');
+            const text = document.getElementById('modal-text');
+            const btnGroup = document.getElementById('modal-buttons');
+            
+            text.innerHTML = msg; // 줄바꿈 등을 위해 innerHTML 사용
+            btnGroup.innerHTML = '';
+
+            if (type === 'confirm') {
+                // 예/아니오 버튼
+                const yesBtn = document.createElement('button');
+                yesBtn.className = 'btn';
+                yesBtn.style.padding = '8px 20px';
+                yesBtn.innerText = '네';
+                yesBtn.onclick = () => {
+                    closeModal();
+                    if(yesCallback) yesCallback();
+                };
+                
+                const noBtn = document.createElement('button');
+                noBtn.className = 'btn btn-next'; // 어두운 색 버튼 재활용
+                noBtn.style.padding = '8px 20px';
+                noBtn.innerText = '아니오';
+                noBtn.onclick = closeModal;
+
+                btnGroup.appendChild(yesBtn);
+                btnGroup.appendChild(noBtn);
+            } else {
+                // 확인(Alert) 버튼
+                const okBtn = document.createElement('button');
+                okBtn.className = 'btn';
+                okBtn.innerText = '확인';
+                okBtn.onclick = closeModal;
+                btnGroup.appendChild(okBtn);
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+
+        // --- 처음으로 가기 (모달 사용) ---
+        function goHome() {
+            showModal(
+                '현재 게임 진행 상황이 사라집니다.<br>처음 화면으로 돌아가시겠습니까?', 
+                'confirm', 
+                () => {
+                    clearInterval(timerId);
+                    switchScreen('start-screen');
+                    document.body.style.backgroundColor = 'var(--bg-dark)'; // 배경색 초기화
+                }
+            );
+        }
+
+        function startGame() {
+            const sId = document.getElementById('input-id').value.trim();
+            const sName = document.getElementById('input-name').value.trim();
+
+            if (!sId || !sName) {
+                showModal('학번과 이름을 모두 입력해주세요!', 'alert');
+                return;
+            }
+
+            studentInfo = `${sId} ${sName}`;
+            score = 0;
+            timeLeft = 180;
+            document.getElementById('score').innerText = score;
+            switchScreen('game-screen');
+            startTimer();
+            nextQuestion();
+        }
+
+        function startTimer() {
+            if(timerId) clearInterval(timerId);
+            timerId = setInterval(() => {
+                timeLeft--;
+                const min = Math.floor(timeLeft / 60);
+                const sec = timeLeft % 60;
+                document.getElementById('timer').innerText = `0${min}:${sec < 10 ? '0'+sec : sec}`;
+                
+                if (timeLeft <= 0) {
+                    finishGame();
+                }
+            }, 1000);
+        }
+
+        function finishGame() {
+            clearInterval(timerId);
+            switchScreen('result-screen');
+            document.getElementById('result-student-info').innerText = `학생: ${studentInfo}`;
+            document.getElementById('final-score').innerText = score;
+            document.body.style.backgroundColor = 'var(--dark)';
+        }
+
+        function nextQuestion() {
+            attempts = 0;
+            isQuestionActive = true;
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('feedback').style.color = 'inherit';
+            document.getElementById('btn-check').disabled = false;
+            document.getElementById('btn-next').style.display = 'none';
+
+            const randomIndex = Math.floor(Math.random() * elements.length);
+            currentElement = elements[randomIndex];
+
+            let options = [currentElement];
+            while(options.length < 3) {
+                const wrong = elements[Math.floor(Math.random() * elements.length)];
+                if(!options.includes(wrong)) {
+                    options.push(wrong);
+                }
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            document.getElementById('q-text').innerText = currentElement.k;
+            updateBackground(currentElement.n);
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.s;
+                btn.onclick = () => checkSelection(btn, opt);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkSelection(btnEl, selectedData) {
+            if (!isQuestionActive) return;
+
+            const feedback = document.getElementById('feedback');
+
+            if (selectedData.s === currentElement.s) {
+                // 정답 로직
+                isQuestionActive = false;
+                btnEl.classList.add('correct');
+                
+                let points = 0;
+                if (attempts === 0) points = 1;      // 1차 정답
+                else if (attempts === 1) points = 0.5; // 2차 정답
+                
+                score += points;
+                document.getElementById('score').innerText = score;
+                
+                feedback.style.color = 'var(--correct)';
+                feedback.innerText = `⭕ 정답입니다! (+${points}점)`;
+                
+                disableAllButtons();
+                setTimeout(nextQuestion, 1200);
+
+            } else {
+                // 오답 로직 (즉시 감점)
+                score -= 1; // 오답 시 1점 감점
+                document.getElementById('score').innerText = score;
+                
+                attempts++;
+                btnEl.classList.add('wrong');
+                btnEl.disabled = true;
+
+                if (attempts === 1) {
+                    feedback.style.color = 'var(--wrong)';
+                    feedback.innerText = `❌ 틀렸습니다! (-1점) 기회가 1번 남았습니다!`;
+                } else {
+                    feedback.style.color = 'var(--wrong)';
+                    feedback.innerText = `❌ 틀렸습니다! (-1점) 정답은 [ ${currentElement.s} ] 입니다.`;
+                    isQuestionActive = false;
+                    revealCorrectButton();
+                    disableAllButtons();
+                    document.getElementById('btn-next').style.display = 'inline-block';
+                }
+            }
+        }
+
+        function revealAnswer() {
+            if (!isQuestionActive) return;
+            isQuestionActive = false;
+            const feedback = document.getElementById('feedback');
+            feedback.style.color = 'var(--warning)';
+            feedback.innerText = `💡 정답은 [ ${currentElement.s} ] 입니다. (점수 없음)`;
+            revealCorrectButton();
+            disableAllButtons();
+            document.getElementById('btn-next').style.display = 'inline-block';
+        }
+
+        function revealCorrectButton() {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(btn => {
+                if (btn.innerText === currentElement.s) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+
+        function disableAllButtons() {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(btn => btn.disabled = true);
+            document.getElementById('btn-check').disabled = true;
+        }
+
+        function saveResultImage() {
+            const resultScreen = document.getElementById('result-screen');
+            const container = document.querySelector('.app-container');
+            
+            // 1. 현재 스타일 저장
+            const originalStyle = resultScreen.style.cssText;
+            const originalContainerStyle = container.style.overflow;
+
+            // 2. 캡처를 위한 스타일 적용
+            container.style.overflow = 'visible';
+            
+            resultScreen.style.background = 'white';
+            resultScreen.style.padding = '40px';
+            resultScreen.style.width = '500px'; // 고정 너비 (글자 깨짐 방지)
+            resultScreen.style.margin = '0 auto';
+            resultScreen.style.borderRadius = '20px';
+            resultScreen.style.color = 'black'; 
+            resultScreen.style.boxShadow = 'none';
+            resultScreen.style.border = '5px solid #6C5CE7';
+            
+            // 캡처 시 애니메이션 및 전환 효과 완전 제거
+            resultScreen.style.transform = 'none';
+            resultScreen.style.animation = 'none'; 
+            resultScreen.style.transition = 'none'; 
+            resultScreen.style.opacity = '1';
+
+            html2canvas(resultScreen, {
+                scale: 4, // 4배 고해상도
+                backgroundColor: "#ffffff",
+                useCORS: true,
+                allowTaint: true,
+            }).then(canvas => {
+                // 3. 스타일 원상복구
+                resultScreen.style.cssText = originalStyle;
+                container.style.overflow = originalContainerStyle;
+
+                // 4. 다운로드
+                const image = canvas.toDataURL("image/png");
+                const safeName = studentInfo.replace(/\s+/g, '_') || '학생';
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = `주기율표_퀴즈_${safeName}_${score}점.png`;
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
