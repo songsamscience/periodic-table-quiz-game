@@ -190,6 +190,15 @@ h1{
 .field input::placeholder{color:var(--txt-3);}
 .field input:focus{border-color:var(--acc);background:rgba(94,234,212,.08);box-shadow:0 0 0 4px rgba(94,234,212,.13);}
 .field .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:1rem;opacity:.75;pointer-events:none;}
+.privacy{
+  display:flex;align-items:flex-start;gap:9px;margin-top:10px;
+  padding:11px 13px;border-radius:var(--r-sm);
+  background:var(--surf-soft2);border:1px solid var(--brd);
+  font-size:.75rem;line-height:1.6;color:var(--txt-3);word-break:keep-all;
+}
+.privacy .lk{font-size:.92rem;line-height:1.45;flex:0 0 auto;opacity:.9;}
+.privacy b{color:var(--acc);font-weight:800;}
+.privacy i{font-style:normal;color:var(--txt-2);font-weight:700;}
 
 /* ---------- 난이도 카드 ---------- */
 .diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
@@ -810,6 +819,10 @@ kbd{background:var(--surf-hover);border:1px solid var(--brd);border-bottom-width
       <div class="row2">
         <div class="field"><span class="ico">🎫</span><input type="text" id="in-id" placeholder="학번 (예: 20101)" inputmode="numeric" maxlength="10"></div>
         <div class="field"><span class="ico">🙋</span><input type="text" id="in-name" placeholder="이름" maxlength="12"></div>
+      </div>
+      <div class="privacy">
+        <span class="lk">🔒</span>
+        <span>입력한 학번과 이름은 <b>서버에 따로 저장되지 않습니다.</b> 결과 화면에 표시하기 위해 이 기기의 브라우저에만 남을 뿐, <i>외부로 전송되거나 수집되지 않아요.</i></span>
       </div>
 
       <div class="sec-title">난이도 선택</div>
