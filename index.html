@@ -1529,7 +1529,7 @@ function choose(btn, picked, ev){
     nWrong++;
     combo = 0; updateCombo();
     addScore(-PT.MINUS);
-    countWrong(cur);
+    countWrong(cur, picked);
     btn.classList.add("wrong"); btn.disabled = true;
     floatText(`-${PT.MINUS}`, "var(--bad)", cx, cy - 14);
     FX.burst(cx, cy, PAL.bad, 16, 5);
@@ -1551,9 +1551,11 @@ function choose(btn, picked, ev){
   }
 }
 
-function countWrong(e){
-  if(!wrongMap[e.n]) wrongMap[e.n] = { el:e, c:0 };
-  wrongMap[e.n].c++;
+function countWrong(e, picked){
+  if(!wrongMap[e.n]) wrongMap[e.n] = { el:e, c:0, picks:[] };
+  const w = wrongMap[e.n];
+  w.c++;
+  if(picked && !w.picks.some(p => p.n === picked.n)) w.picks.push(picked);
 }
 function lockOptions(){ $$(".opt").forEach(b => b.disabled = true); }
 function markCorrectOption(){
@@ -1599,12 +1601,12 @@ function askHome(){
    결과
    ═══════════════════════════════════════════════════════════ */
 const GRADES = [
-  { min:400, g:"S+", t:"주기율표 정복! 완벽 그 자체 ⚡" },
-  { min:300, g:"S",  t:"최고예요! 원소 마스터 👑" },
-  { min:220, g:"A",  t:"훌륭해요! 거의 다 왔어요 🎯" },
-  { min:150, g:"B",  t:"잘했어요! 조금만 더 🚀" },
-  { min:80,  g:"C",  t:"좋아요! 오답노트 복습 고고 📖" },
-  { min:-9999,g:"D", t:"괜찮아요! 도감 보고 다시 도전 💪" }
+  { min:2500, g:"S+", t:"주기율표 정복! 완벽 그 자체 ⚡" },
+  { min:1900, g:"S",  t:"최고예요! 원소 마스터 👑" },
+  { min:1400, g:"A",  t:"훌륭해요! 거의 다 왔어요 🎯" },
+  { min:950,  g:"B",  t:"잘했어요! 조금만 더 🚀" },
+  { min:500,  g:"C",  t:"좋아요! 오답노트 복습 고고 📖" },
+  { min:-99999,g:"D", t:"괜찮아요! 도감 보고 다시 도전 💪" }
 ];
 let lastRun = null;
 
@@ -1620,7 +1622,9 @@ function finishGame(){
   const isRecord = prevBest === undefined || score > prevBest;
   if(isRecord){ store.best[diff] = score; save(store); refreshBest(); }
 
-  lastRun = { score, diff, qmode, student, acc, speed, bestCombo, nCorrect, nWrong, grade:gr.g, isRecord, date:new Date() };
+  const wrongList = Object.values(wrongMap).sort((a,b)=> b.c-a.c || a.el.n-b.el.n);
+
+  lastRun = { score, diff, qmode, student, acc, speed, bestCombo, nCorrect, nWrong, grade:gr.g, isRecord, date:new Date(), wrongs:wrongList };
 
   $("grade").textContent = gr.g;
   $("grade-label").textContent = gr.t;
@@ -1636,7 +1640,7 @@ function finishGame(){
   setTimeout(()=>{ $("acc-fill").style.width = acc + "%"; }, 240);
 
   const wn = $("wrongnote");
-  const list = Object.values(wrongMap).sort((a,b)=> b.c-a.c || a.el.n-b.el.n);
+  const list = wrongList;
   if(!list.length){
     wn.innerHTML = `<div class="empty-note">🎉 틀린 문제가 하나도 없어요! 대단해요!</div>`;
   } else {
@@ -1650,7 +1654,7 @@ function finishGame(){
 
   switchScreen("scr-result");
   if(isRecord){ SFX.record(); FX.confetti(160); }
-  else { SFX.over(); if(score >= 220) FX.confetti(90); }
+  else { SFX.over(); if(score >= 1400) FX.confetti(90); }
 }
 
 function retry(){ SFX.click(); switchScreen("scr-start"); setTimeout(()=>countdown(), 380); }
@@ -1660,7 +1664,22 @@ function goStart(){ clearInterval(timerId); clearNoteTimeouts(); live = false; s
 function saveResultImage(){
   if(!lastRun){ return; }
   SFX.click();
-  const W = 900, H = 1320, cv = document.createElement("canvas");
+  // 오답노트 길이에 따라 세로 크기가 달라지므로 좌표를 먼저 계산한다
+  const W = 900;
+  const bx = 80, by = lastRun.isRecord ? 718 : 676, bw = (W-160-20)/2, bh = 116;
+  const sy = by + 2*bh + 18 + 42;
+  const noteTop = sy + 74 + 40;
+  const wrongs = lastRun.wrongs || [];
+  const MAX_ROWS = 12;
+  const rows = wrongs.slice(0, MAX_ROWS);
+  const rowH = 82, rowGap = 12;
+  const moreH = wrongs.length > rows.length ? 42 : 0;
+  const noteH = rows.length
+    ? 56 + rows.length*rowH + (rows.length-1)*rowGap + moreH
+    : 56 + 80;
+  const H = noteTop + noteH + 230;
+
+  const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
   const x = cv.getContext("2d");
   const F = '"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
@@ -1675,6 +1694,7 @@ function saveResultImage(){
     grade:["#f59e0b","#ea580c","#db2777"], score:["#0d9488","#6d28d9"],
     panel:"rgba(23,37,84,.05)", panelBrd:"rgba(23,37,84,.14)",
     chip:"rgba(13,148,136,.12)", chipBrd:"rgba(13,148,136,.4)",
+    bad:"#dc2626",
     rec:"#ea580c", recTxt:"#ffffff", foot:"#8b94ad"
   } : {
     bg:["#0e1733","#0a1024","#120a26"],
@@ -1684,6 +1704,7 @@ function saveResultImage(){
     grade:["#fde68a","#fbbf24","#f472b6"], score:["#5eead4","#c4b5fd"],
     panel:"rgba(255,255,255,.07)", panelBrd:"rgba(255,255,255,.16)",
     chip:"rgba(94,234,212,.13)", chipBrd:"rgba(94,234,212,.4)",
+    bad:"#fda4af",
     rec:"#fbbf24", recTxt:"#2a1400", foot:"#55618a"
   };
 
@@ -1749,7 +1770,6 @@ function saveResultImage(){
     ["🔥 최고 콤보", `${lastRun.bestCombo}`],
     ["⚡ 평균 속도", lastRun.speed ? `${lastRun.speed.toFixed(1)}초` : "-"]
   ];
-  const bx = 80, by = lastRun.isRecord ? 718 : 676, bw = (W-160-20)/2, bh = 116;
   stats.forEach((s,i) => {
     const px = bx + (i%2)*(bw+20), py = by + ((i/2)|0)*(bh+18);
     x.fillStyle = C.panel; rr(px,py,bw,bh,20); x.fill();
@@ -1761,11 +1781,82 @@ function saveResultImage(){
   });
 
   // 학생 정보
-  const sy = by + 2*bh + 18 + 42;
   x.fillStyle = C.chip; rr(80,sy,W-160,74,24); x.fill();
   x.strokeStyle = C.chipBrd; x.lineWidth = 2; rr(80,sy,W-160,74,24); x.stroke();
   x.fillStyle = C.txt; x.font = `800 34px ${F}`;
   x.fillText(`🎓 ${lastRun.student}`, W/2, sy+48);
+
+  // ── 오답노트 (아이가 고른 오답까지 함께) ──
+  const rootCS = getComputedStyle(document.documentElement);
+  const catHex = el => {
+    const v = CATS[el.cat].c, m = /var\((--[\w-]+)\)/.exec(v);
+    return (m ? rootCS.getPropertyValue(m[1]).trim() : v) || C.sub;
+  };
+  const fit = (t, maxw, font) => {
+    x.font = font;
+    if(x.measureText(t).width <= maxw) return t;
+    let s = t;
+    while(s.length > 1 && x.measureText(s + "…").width > maxw) s = s.slice(0, -1);
+    return s + "…";
+  };
+
+  x.textAlign = "left";
+  x.fillStyle = C.txt; x.font = `800 30px ${F}`;
+  x.fillText("📝 내가 틀린 문제", 80, noteTop+30);
+  if(wrongs.length){
+    x.textAlign = "right";
+    x.fillStyle = C.dim; x.font = `700 22px ${F}`;
+    x.fillText(`${wrongs.length}종 · ${lastRun.nWrong}회`, W-80, noteTop+30);
+  }
+  x.textAlign = "center";
+
+  let ny = noteTop + 56;
+  if(!rows.length){
+    x.fillStyle = C.panel; rr(80, ny, W-160, 80, 22); x.fill();
+    x.strokeStyle = C.panelBrd; x.lineWidth = 2; rr(80, ny, W-160, 80, 22); x.stroke();
+    x.fillStyle = C.txt; x.font = `800 28px ${F}`;
+    x.fillText("🎉 틀린 문제가 하나도 없어요!", W/2, ny+50);
+  } else {
+    rows.forEach(w => {
+      x.fillStyle = C.panel; rr(80, ny, W-160, rowH, 20); x.fill();
+      x.strokeStyle = C.panelBrd; x.lineWidth = 2; rr(80, ny, W-160, rowH, 20); x.stroke();
+
+      // 정답 원소 기호 뱃지
+      const cc = catHex(w.el);
+      x.globalAlpha = .18; x.fillStyle = cc; rr(98, ny+13, 56, 56, 16); x.fill(); x.globalAlpha = 1;
+      x.strokeStyle = cc; x.lineWidth = 2; rr(98, ny+13, 56, 56, 16); x.stroke();
+      x.fillStyle = cc; x.font = `900 26px ${F}`;
+      x.fillText(w.el.s, 126, ny+50);
+
+      // 정답 이름
+      x.textAlign = "left";
+      x.fillStyle = C.txt;
+      x.fillText(fit(fullName(w.el), 250, `800 26px ${F}`), 172, ny+37);
+      x.fillStyle = C.dim; x.font = `600 19px ${F}`;
+      x.fillText(`원자번호 ${w.el.n} · ${w.c}회 틀림`, 172, ny+64);
+
+      // 아이가 고른 오답
+      const pk = w.picks || [];
+      x.textAlign = "right";
+      if(pk.length){
+        const shown = pk.slice(0,2).map(p => `${p.s} ${p.k}`).join(", ");
+        const val = pk.length > 2 ? `${shown} 외 ${pk.length-2}` : shown;
+        x.fillStyle = C.dim; x.font = `700 18px ${F}`;
+        x.fillText("내가 고른 답", W-104, ny+34);
+        x.fillStyle = C.bad;
+        x.fillText(fit(val, 300, `800 22px ${F}`), W-104, ny+62);
+      } else {
+        x.fillStyle = C.sub;
+        x.fillText(fit("💡 힌트로 확인", 300, `700 22px ${F}`), W-104, ny+50);
+      }
+      x.textAlign = "center";
+      ny += rowH + rowGap;
+    });
+    if(moreH){
+      x.fillStyle = C.dim; x.font = `700 22px ${F}`;
+      x.fillText(`… 그 밖에 ${wrongs.length - rows.length}개 더 틀렸어요`, W/2, ny+24);
+    }
+  }
 
   const d = lastRun.date;
   const ds = `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
